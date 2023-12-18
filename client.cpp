@@ -17,6 +17,8 @@ in the License.
 
 using namespace std;
 #include <iostream>
+#include <fstream>
+
 
 #include "config.h"
 
@@ -548,6 +550,11 @@ int do_quote(sgx_enclave_id_t eid, config_t *config) {
   fprintf(stderr, "WARNING! Built in h/w simulation mode. This quote will not "
                   "be verifiable.\n");
 #endif
+
+  ofstream quote_file;
+  quote_file.open("quote.txt");
+  quote_file << b64quote;
+  quote_file.close();
 
   free(b64quote);
 

@@ -53,7 +53,13 @@ def hexlify_report_data(address, message):
 
 def gen_quote(address, message):
     report_data = hexlify_report_data(address, message)
+
     subprocess.run(["sh", "run-client", "-q", "--debug", "--report-data", report_data])
+
+    with open("quote.txt") as f:
+        quote = f.read()
+
+    return {"isvEnclaveQuote": quote}
 
 
 def send_quote_to_ias(quote):
