@@ -48,7 +48,7 @@ def hexlify_report_data(address, message):
     if len(message) > 44:
         raise ValueError("message must be 44 characters at most")
 
-    return address + message.encode().hex()
+    return address + message.rjust(44, " ").encode().hex()
 
 
 def gen_quote(address, message):
