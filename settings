@@ -15,14 +15,14 @@ QUERY_IAS_PRODUCTION=0
 # Your Service Provider ID. This should be a 32-character hex string.
 # [REQUIRED]
 
-SPID=0123456789ABCDEF0123456789ABCDEF
+SPID=
 
 
 # Set to a non-zero value if this SPID is associated with linkable 
 # quotes. If you change this, you'll need to change SPID,
 # IAS_PRIMARY_SUBSCRIPTION_KEY and IAS_SECONDARY_SUBSCRIPTION_KEY too.
 
-LINKABLE=0
+LINKABLE=1
 
 
 #======================================================================
@@ -31,7 +31,7 @@ LINKABLE=0
 
 # Set to non-zero to have the client generate a random nonce.
 
-RANDOM_NONCE=1
+RANDOM_NONCE=0
 
 # Set to non-zero to have the client generate a platform manifest.
 # This requires a PSE session, and thus support for platform

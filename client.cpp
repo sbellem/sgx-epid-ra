@@ -71,6 +71,7 @@ typedef struct config_struct {
   sgx_spid_t spid;
   sgx_ec256_public_t pubkey;
   sgx_quote_nonce_t nonce;
+  sgx_report_data_t report_data;
   char *server;
   char *port;
 } config_t;
@@ -116,6 +117,7 @@ int main(int argc, char *argv[]) {
   uint32_t i;
   EVP_PKEY *service_public_key = NULL;
   char have_spid = 0;
+  char have_reportdata = 0;
   char flag_stdio = 0;
 
   /* Create a logfile to capture debug output and actual msg data */
@@ -155,6 +157,7 @@ int main(int argc, char *argv[]) {
                                      {"pubkey", optional_argument, 0, 'p'},
                                      {"pubkey-file", required_argument, 0, 'P'},
                                      {"quote", no_argument, 0, 'q'},
+                                     {"report-data", required_argument, 0, 'i'},
                                      {"verbose", no_argument, 0, 'v'},
                                      {"stdio", no_argument, 0, 'z'},
                                      {0, 0, 0, 0}};
@@ -166,7 +169,7 @@ int main(int argc, char *argv[]) {
     int opt_index = 0;
     unsigned char keyin[64];
 
-    c = getopt_long(argc, argv, "N:P:S:dehlmn:p:qrs:vz", long_opt, &opt_index);
+    c = getopt_long(argc, argv, "N:P:S:deihlmn:p:qrs:vz", long_opt, &opt_index);
     if (c == -1)
       break;
 
@@ -211,6 +214,19 @@ int main(int argc, char *argv[]) {
       break;
     case 'e':
       config.mode = MODE_EPID;
+      break;
+    case 'i':
+      if (strlen(optarg) > 128) {
+        fprintf(stderr, "report data must be 64-byte hex string max\n");
+        exit(1);
+      }
+      if (!from_hexstring((unsigned char *)&config.report_data,
+                          (unsigned char *)optarg, 64)) {
+
+        fprintf(stderr, "report data must be 64-byte hex string max\n");
+        exit(1);
+      }
+      ++have_reportdata;
       break;
     case 'l':
       SET_OPT(config.flags, OPT_LINK);
@@ -450,13 +466,14 @@ int do_quote(sgx_enclave_id_t eid, config_t *config) {
   // TODO Put this in the get_report function as this must be done in enclave
   // otherwise this code could be modified by the host such that the report data
   // is tampered with.
-  // sgx_report_data_t report_data = {{0}};
+  //sgx_report_data_t report_data = {{0}};
   // sgx_status_t sha_status;
   // xstatus = enclave_set_report_data(eid, &sha_status, &report_data);
   // print_hexstring(stdout, &report_data, sizeof(sgx_report_data_t));
 
-  // status = get_report(eid, &sgxrv, &report, &target_info, &report_data);
-  status = get_report(eid, &sgxrv, &report, &target_info);
+  status = get_report(eid, &sgxrv, &report, &target_info, &config->report_data);
+  //status = get_report(eid, &sgxrv, &report, &target_info, &report_data);
+  //status = get_report(eid, &sgxrv, &report, &target_info);
   if (status != SGX_SUCCESS) {
     fprintf(stderr, "get_report: %08x\n", status);
     return 1;
@@ -647,6 +664,8 @@ void usage() {
   fprintf(stderr, "  -e, --epid-gid           Get the EPID Group ID instead of "
                   "performing\n");
   fprintf(stderr, "                             an attestation.\n");
+  fprintf(stderr, "  -i, --report-data=HEXSTRING    Set the report data from a 64-byte "
+                  "ASCII hex string\n");
   fprintf(stderr, "  -l, --linkable           Specify a linkable quote "
                   "(default: unlinkable)\n");
   fprintf(stderr, "  -n, --nonce=HEXSTRING    Set a nonce from a 32-byte ASCII "

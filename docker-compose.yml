@@ -20,8 +20,12 @@ services:
     environment:
       SGX_SPID: ${SGX_SPID}
       IAS_PRIMARY_KEY: ${IAS_PRIMARY_KEY}
+      INFURA_API_KEY: ${INFURA_API_KEY}
     volumes:
       - aesmd-socket:/var/run/aesmd
+      - ./settings:/usr/src/hashmachine/settings
+      - ./epidcontest.py:/usr/src/hashmachine/epidcontest.py
+      - ./epid_contest_contract_abi.txt:/usr/src/hashmachine/epid_contest_contract_abi.txt
     command: ./run-client --debug -q
 
 volumes:

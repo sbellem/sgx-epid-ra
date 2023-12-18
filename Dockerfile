@@ -7,16 +7,11 @@ FROM  nixpkgs/cachix-flakes AS build-enclave
 
 WORKDIR /usr/src
 
-#COPY nix /usr/src/nix
-#COPY default.nix /usr/src/default.nix
-#COPY flake.nix /usr/src/
 COPY . .
 
-#RUN mkdir -p ~/.config/nixpkgs && mv /usr/src/nix/config.nix ~/.config/nixpkgs/
 RUN set -eux; \
     \
     mkdir -p ~/.config/nixpkgs; \
-    touch ~/.config/nixpkgs/config.nix; \
     echo "{ permittedInsecurePackages = [ \"openssl-1.1.1u\" ]; }" \
         >> ~/.config/nixpkgs/config.nix;
 
@@ -38,7 +33,7 @@ RUN apt-get update && apt-get install -y \
                 vim \
         && rm -rf /var/lib/apt/lists/*
 
-RUN pip install ipython requests pyyaml
+RUN pip install ipython requests pyyaml web3
 
 WORKDIR /usr/src/hashmachine
 
