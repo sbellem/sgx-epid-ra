@@ -8,6 +8,8 @@ import requests
 import eth_abi
 from web3 import Web3
 
+DEFAULT_LOGBOOK_MESSAGE = "pour tea in kettle; heat kettle in tee; 🍵"
+
 
 def _normalize_report_items(report):
     report["version"] = str(report["version"])
@@ -38,17 +40,24 @@ def encode_ias_response(ias_response):
     return eth_abi.encode(["bytes", "bytes"], (abidata, decoded_signature)).hex()
 
 
-def hexlify_report_data(address, message):
+def hexlify_report_data(address, message, *, fillchar=" "):
+    HEX_MSG_LEN = 88
+
+    if len(fillchar) != 1:
+        raise ValueError("fillchar must only be one character")
+
     if address.startswith("0x"):
         address = address[2:]
 
     if len(address) != 40:
         raise ValueError("address is incorrect")
 
-    if len(message) > 44:
-        raise ValueError("message must be 44 characters at most")
+    hex_msg = message.encode().hex()
+    if len(hex_msg) > HEX_MSG_LEN:
+        raise ValueError(f"hex message must be {HEX_MSG_LEN} characters at most")
 
-    return address + message.rjust(44, " ").encode().hex()
+    hex_fillchar = fillchar.encode().hex()
+    return address + hex_fillchar * ((HEX_MSG_LEN - len(hex_msg)) // 2) + hex_msg
 
 
 def gen_quote(address, message):
@@ -116,14 +125,82 @@ def verify_epid(*, quote=None, ias_response=None, attestation=None, contract=Non
     return contract.functions.verify_epid(bytes.fromhex(attestation)).call()
 
 
-def enter_contest(quote):
-    # account =
-    tx = epid_contest_contract.functions.enter_contest(
-        bytes.fromhex(attestation)
-    ).build_transaction(
+def instantiate_eth_account(private_key, *, w3=None):
+    if not w3:
+        w3 = connect_to_network()
+
+    return w3.eth.account.from_key(private_key)
+
+
+def gen_enter_contest_tx(address, message, from_address):
+    quote = gen_quote(address, message)
+    ias_response = send_quote_to_ias(quote)
+    attestation = encode_ias_response(ias_response)
+
+    w3 = connect_to_network()
+    contract = connect_to_contract(w3)
+
+    tx = contract.functions.enter_contest(bytes.fromhex(attestation)).build_transaction(
+        {
+            "from": from_address,
+            "nonce": w3.eth.get_transaction_count(from_address),
+        }
+    )
+    return tx
+
+
+def sign_tx(*, w3=None, private_key=None):
+    if not w3:
+        w3 = connect_to_network()
+
+    if not private_key:
+        private_key = os.environ["ETH_PRIVATE_KEY"]
+
+    account = w3.eth.account.from_key(private_key)
+    signed_tx = w3.eth.account.sign_transaction(tx, private_key=account.key)
+
+    return signed_tx
+
+
+def enter_contest(
+    *,
+    address=None,
+    message=None,
+    quote=None,
+    ias_response=None,
+    attestation=None,
+    w3=None,
+    contract=None,
+    account=None,
+):
+    if address and message:
+        quote = gen_quote(address, message)
+
+    if quote:
+        ias_response = send_quote_to_ias(quote)
+
+    if ias_response:
+        attestation = encode_ias_response(ias_response)
+
+    if not attestation:
+        raise Exception("Missing argument! Pass quote, ias_response or attestation.")
+
+    if not w3:
+        w3 = connect_to_network()
+
+    if not contract:
+        contract = connect_to_contract(w3)
+
+    if not account:
+        private_key = os.environ["ETH_PRIVATE_KEY"]
+        w3.eth.account.from_key(private_key)
+
+    tx = contract.functions.enter_contest(bytes.fromhex(attestation)).build_transaction(
         {
             "from": account.address,
             "nonce": w3.eth.get_transaction_count(account.address),
         }
     )
-    raise NotImplementedError
+    signed_tx = w3.eth.account.sign_transaction(tx, private_key=account.key)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    return tx_hash

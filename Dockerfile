@@ -35,7 +35,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install ipython requests pyyaml web3
 
-WORKDIR /usr/src/hashmachine
+WORKDIR /usr/src/sgx_epid_ra
 
 ENV PATH ${PATH}:${SGX_SDK}/bin:${SGX_SDK}/bin/x64
 ENV PKG_CONFIG_PATH ${SGX_SDK}/pkgconfig

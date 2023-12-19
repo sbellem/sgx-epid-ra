@@ -9,7 +9,7 @@ services:
       - /dev/isgx
 
   genquote:
-    image: sgx_hashmachine
+    image: sgx_epid_ra:local
     build:
       context: .
       dockerfile: Dockerfile
@@ -21,11 +21,13 @@ services:
       SGX_SPID: ${SGX_SPID}
       IAS_PRIMARY_KEY: ${IAS_PRIMARY_KEY}
       INFURA_API_KEY: ${INFURA_API_KEY}
+      REWARD_RECEIVING_ADDRESS: ${REWARD_RECEIVING_ADDRESS}
+      ETH_PRIVATE_KEY: ${ETH_PRIVATE_KEY}
     volumes:
       - aesmd-socket:/var/run/aesmd
-      - ./settings:/usr/src/hashmachine/settings
-      - ./epidcontest.py:/usr/src/hashmachine/epidcontest.py
-      - ./epid_contest_contract_abi.txt:/usr/src/hashmachine/epid_contest_contract_abi.txt
+      - ./settings:/usr/src/sgx_epid_ra/settings
+      - ./epidcontest.py:/usr/src/sgx_epid_ra/epidcontest.py
+      - ./epid_contest_contract_abi.txt:/usr/src/sgx_epid_ra/epid_contest_contract_abi.txt
     command: ./run-client --debug -q
 
 volumes:
