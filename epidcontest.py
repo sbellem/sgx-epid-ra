@@ -149,7 +149,7 @@ def gen_enter_contest_tx(address, message, from_address):
     return tx
 
 
-def sign_tx(*, w3=None, private_key=None):
+def sign_tx(tx, *, w3=None, private_key=None):
     if not w3:
         w3 = connect_to_network()
 
